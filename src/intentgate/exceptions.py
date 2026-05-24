@@ -5,7 +5,7 @@ The hierarchy lets callers catch broadly (``except IntentGateError``) or
 narrowly (``except CapabilityError``) depending on whether they want to
 distinguish *which* check fired.
 
-The four pipeline-stage exceptions correspond one-to-one with the
+The pipeline-stage exceptions correspond one-to-one with the
 gateway's JSON-RPC error codes:
 
 ==================  =================  =========
@@ -15,6 +15,7 @@ CapabilityError     -32010             capability
 IntentError         -32011             intent
 PolicyError         -32012             policy
 BudgetError         -32013             budget
+ProvenanceError     -32014             provenance (opt-in, AAI03)
 ==================  =================  =========
 """
 
@@ -97,6 +98,26 @@ class BudgetError(IntentGateError):
     """
 
 
+class ProvenanceError(IntentGateError):
+    """The opt-in memory-provenance check denied the call.
+
+    Raised when the gateway's AAI03 memory-poisoning defense (the
+    fifth check, between intent and policy, gated on the gateway's
+    INTENTGATE_PROVENANCE_ENABLED flag) rejects a tools/call because
+    the ``X-Intent-Memory-Provenance`` header carries an entry whose
+    HMAC does not verify, whose prev_hash chain is broken, or whose
+    envelope is structurally malformed.
+
+    The ``data`` attribute carries the gateway's specific rejection
+    reason (e.g. "entry 0: hmac mismatch", "entry 1: prev_hash does
+    not match previous entry's canonical hash") — useful for
+    forensics, not safe to show to end users.
+
+    JSON-RPC code -32014. Not raised by gateways with provenance
+    disabled, which is the default.
+    """
+
+
 # --- Internal helper ---------------------------------------------------
 
 
@@ -105,6 +126,7 @@ _CODE_TO_EXC: dict[int, type[IntentGateError]] = {
     -32011: IntentError,
     -32012: PolicyError,
     -32013: BudgetError,
+    -32014: ProvenanceError,
 }
 
 

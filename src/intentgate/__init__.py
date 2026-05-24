@@ -33,6 +33,12 @@ from intentgate.exceptions import (
     IntentGateError,
     PolicyError,
     ProtocolError,
+    ProvenanceError,
+)
+from intentgate.memory import (
+    Envelope,
+    MemoryStore,
+    derive_session_key,
 )
 
 __all__ = [
@@ -47,10 +53,14 @@ __all__ = [
     "IntentError",
     "PolicyError",
     "BudgetError",
+    "ProvenanceError",
     "attenuate",
     "Caveat",
     "AttenuationError",
     "decode_token",
+    "MemoryStore",
+    "Envelope",
+    "derive_session_key",
 ]
 
 __version__ = "0.3.0"

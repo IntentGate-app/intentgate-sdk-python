@@ -127,6 +127,8 @@ class Gateway:
         *,
         intent_prompt: str | None = None,
         request_id: int | str | None = None,
+        memory_provenance: list[str] | None = None,
+        memory_store: Any = None,
     ) -> ToolCallResult:
         """Invoke a tool through the gateway.
 
@@ -142,6 +144,20 @@ class Gateway:
                 intent check is skipped (or denies in strict mode).
             request_id: JSON-RPC ``id`` for the request. When ``None``,
                 a sequential per-Gateway counter is used.
+            memory_provenance: Optional list of memory entry IDs that
+                influenced the tool call. When supplied together with
+                ``memory_store``, the SDK packs the corresponding
+                signed envelopes into the ``X-Intent-Memory-Provenance``
+                header — the gateway re-derives the session key from
+                the capability token's jti, verifies each HMAC, and
+                walks the chain. Used only when the gateway has
+                provenance enabled (the operator sets
+                ``INTENTGATE_PROVENANCE_ENABLED=true``); otherwise the
+                header is ignored. See :mod:`intentgate.memory`.
+            memory_store: A :class:`intentgate.memory.MemoryStore`
+                instance the SDK queries for the envelopes named in
+                ``memory_provenance``. Required iff ``memory_provenance``
+                is non-empty.
 
         Returns:
             :class:`ToolCallResult` for an allowed call.
@@ -151,6 +167,10 @@ class Gateway:
             IntentError: intent stage denied (-32011).
             PolicyError: policy stage denied (-32012).
             BudgetError: budget stage denied (-32013).
+            ProvenanceError: provenance stage denied (-32014). Only
+                possible when the gateway has provenance enabled and
+                the request carried a provenance header that failed
+                verification.
             ProtocolError: any other JSON-RPC error (parse, method not
                 found, invalid params, internal error).
             GatewayError: network or HTTP transport error reaching
@@ -158,6 +178,11 @@ class Gateway:
         """
         if not tool:
             raise ValueError("tool is required")
+        if memory_provenance and memory_store is None:
+            raise ValueError(
+                "memory_provenance is non-empty but memory_store is None; "
+                "supply a MemoryStore so the SDK can look up the envelopes",
+            )
 
         rid: int | str = request_id if request_id is not None else next(self._ids)
         body = {
@@ -174,6 +199,19 @@ class Gateway:
             headers["Authorization"] = f"Bearer {self._token}"
         if intent_prompt:
             headers["X-Intent-Prompt"] = intent_prompt
+        if memory_provenance:
+            # Look up envelopes, verify locally (an SDK-side tamper
+            # check that surfaces the issue here rather than at the
+            # gateway), encode the wire-format entries, then base64url-
+            # encode the JSON array for the header value.
+            import base64
+            import json
+
+            wire_entries = memory_store.provenance_for(memory_provenance)
+            raw_json = json.dumps(wire_entries, separators=(",", ":")).encode("utf-8")
+            headers["X-Intent-Memory-Provenance"] = (
+                base64.urlsafe_b64encode(raw_json).rstrip(b"=").decode("ascii")
+            )
 
         try:
             resp = self._client.post(self._url + "/v1/mcp", json=body, headers=headers)
