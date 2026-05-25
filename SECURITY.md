@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email **security@netgnarus.com** with subject line starting `Security disclosure`.
+Email **security@intentgate.app** with subject line starting `Security disclosure`.
 
 We confirm receipt within one business day. Embargo: **90 days from confirmed receipt**, or earlier if a patch is available and rolled out to known users, or if the reporter requests it.
 

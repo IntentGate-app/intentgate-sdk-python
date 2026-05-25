@@ -191,5 +191,5 @@ issue to discuss any non-trivial change before sending a PR.
 ## Security
 
 If you find a security vulnerability, please **do not** open a public
-issue. Email security@netgnarus.com (or open a GitHub Security Advisory
+issue. Email security@intentgate.app (or open a GitHub Security Advisory
 on this repo) and we'll respond within two business days.
