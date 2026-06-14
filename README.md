@@ -1,21 +1,21 @@
 # IntentGate Python SDK
 
-[![CI](https://github.com/NetGnarus/intentgate-sdk-python/actions/workflows/ci.yml/badge.svg)](https://github.com/NetGnarus/intentgate-sdk-python/actions/workflows/ci.yml)
+[![CI](https://github.com/IntentGate-app/intentgate-sdk-python/actions/workflows/ci.yml/badge.svg)](https://github.com/IntentGate-app/intentgate-sdk-python/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/intentgate.svg)](https://pypi.org/project/intentgate/)
 [![Python versions](https://img.shields.io/pypi/pyversions/intentgate.svg)](https://pypi.org/project/intentgate/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 The official Python client for the
-[IntentGate authorization gateway](https://github.com/NetGnarus/intentgate-gateway).
+[IntentGate authorization gateway](https://github.com/IntentGate-app/intentgate-gateway).
 
 ## Companion repositories
 
 | Repo | Purpose |
 | ---- | ------- |
-| [intentgate-gateway](https://github.com/NetGnarus/intentgate-gateway) | Go gateway with the four-check pipeline. The thing this SDK talks to. |
-| [intentgate-extractor](https://github.com/NetGnarus/intentgate-extractor) | Optional FastAPI service that turns user prompts into structured intent. |
-| [intentgate-sdk-python](https://github.com/NetGnarus/intentgate-sdk-python) | Python SDK for agents (this repo). |
-| [intentgate-helm](https://github.com/NetGnarus/intentgate-helm) | Helm chart that deploys the gateway, extractor, and Redis to Kubernetes. |
+| [intentgate-gateway](https://github.com/IntentGate-app/intentgate-gateway) | Go gateway with the four-check pipeline. The thing this SDK talks to. |
+| [intentgate-extractor](https://github.com/IntentGate-app/intentgate-extractor) | Optional FastAPI service that turns user prompts into structured intent. |
+| [intentgate-sdk-python](https://github.com/IntentGate-app/intentgate-sdk-python) | Python SDK for agents (this repo). |
+| [intentgate-helm](https://github.com/IntentGate-app/intentgate-helm) | Helm chart that deploys the gateway, extractor, and Redis to Kubernetes. |
 
 ## What it is
 
@@ -54,7 +54,7 @@ on every `vX.Y.Z` git tag via signed OIDC trusted publishing — see
 To install the development tip:
 
 ```sh
-pip install git+https://github.com/NetGnarus/intentgate-sdk-python.git
+pip install git+https://github.com/IntentGate-app/intentgate-sdk-python.git
 ```
 
 ## Exception hierarchy

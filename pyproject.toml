@@ -33,11 +33,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage      = "https://github.com/NetGnarus/intentgate-sdk-python"
-Documentation = "https://github.com/NetGnarus/intentgate-sdk-python#readme"
-Repository    = "https://github.com/NetGnarus/intentgate-sdk-python"
-Issues        = "https://github.com/NetGnarus/intentgate-sdk-python/issues"
-Changelog     = "https://github.com/NetGnarus/intentgate-sdk-python/releases"
+Homepage      = "https://github.com/IntentGate-app/intentgate-sdk-python"
+Documentation = "https://github.com/IntentGate-app/intentgate-sdk-python#readme"
+Repository    = "https://github.com/IntentGate-app/intentgate-sdk-python"
+Issues        = "https://github.com/IntentGate-app/intentgate-sdk-python/issues"
+Changelog     = "https://github.com/IntentGate-app/intentgate-sdk-python/releases"
 
 [build-system]
 requires      = ["hatchling"]

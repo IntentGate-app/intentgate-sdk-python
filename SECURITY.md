@@ -34,11 +34,11 @@ We follow a standard 90-day responsible disclosure model. Earlier disclosure hap
 
 The following are explicitly out of scope for this disclosure program:
 
-- Social engineering of NetGnarus staff or customers
+- Social engineering of IntentGate-app staff or customers
 - Physical attacks on infrastructure
 - Denial-of-service / volumetric attacks (these are operational concerns, not vulnerabilities)
 - Issues in third-party dependencies — please file those with the upstream project. We track upstream advisories via Dependabot and remediate from there.
 
 ---
 
-Maintained by **NetGnarus B.V.**, Ijsselstein, The Netherlands (KvK 63319578). Commercial inquiries: <https://intentgate.app/contact>.
+Maintained by **IntentGate B.V.**, Ijsselstein, The Netherlands (KvK 63319578). Commercial inquiries: <https://intentgate.app/contact>.
