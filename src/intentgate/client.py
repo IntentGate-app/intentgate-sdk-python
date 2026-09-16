@@ -32,6 +32,45 @@ _TOOLS_CALL_METHOD = "tools/call"
 _DEFAULT_TIMEOUT_S = 10.0
 
 
+#: The legacy capability/bundle enforcement route.
+ROUTE_MCP_LEGACY = "/v1/mcp"
+
+#: The governed BA-/IG- enforcement route, where the control-plane decision is the sole authority.
+ROUTE_MCP_GOVERNED = "/v1/mcp/ig"
+
+
+class RouteNotChosenError(exceptions.IntentGateError):
+    """Raised when a Gateway is constructed without choosing a route (ODR-R1-018)."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Gateway: `route` is required and has no default. Choose ROUTE_MCP_GOVERNED "
+            f'("{ROUTE_MCP_GOVERNED}", the governed BA-/IG- chain) or ROUTE_MCP_LEGACY '
+            f'("{ROUTE_MCP_LEGACY}", the legacy capability/bundle pipeline). They are '
+            "different authorities and the choice is yours to make, not this SDK's.",
+            code=0,
+        )
+
+
+class RouteNotFoundError(exceptions.IntentGateError):
+    """Raised when the chosen route is not mounted on this gateway.
+
+    A distinct type rather than a GatewayError carrying a 404, because the two are acted on
+    differently: this one is fixed in configuration and never by a policy change, and it must
+    never be mistaken for the gateway refusing the call.
+    """
+
+    def __init__(self, route: str, detail: object | None = None) -> None:
+        super().__init__(
+            f"gateway has no route {route}: this is a configuration outcome, not a denial. "
+            "Check the route passed to the Gateway constructor against what this deployment "
+            "mounts.",
+            code=0,
+            data=detail,
+        )
+        self.route = route
+
+
 @dataclass(frozen=True)
 class ContentBlock:
     """One piece of the tool's response, in MCP shape.
@@ -109,10 +148,32 @@ class Gateway:
         url: str,
         token: str | None = None,
         *,
+        route: str,
         timeout: float = _DEFAULT_TIMEOUT_S,
         client: httpx.Client | None = None,
     ) -> None:
+        """
+        Args:
+            route: WHICH ENFORCEMENT ROUTE THIS CLIENT TALKS TO. Required; there is no
+                default. Use ``ROUTE_MCP_GOVERNED`` or ``ROUTE_MCP_LEGACY``.
+
+                    [FROZEN] ODR-R1-018 (TIER_1): "NO ROUTE DEFAULT."
+
+                The reason, from the readiness report: a required constructor argument "so no
+                consumer is silently moved between an audited and an unaudited path".
+                ``/v1/mcp`` runs the legacy capability/bundle pipeline; ``/v1/mcp/ig`` is
+                governed solely by the BA-/IG- chain. They are different authorities, and a
+                default would move every consumer from one to the other on an upgrade without
+                anybody reading a changelog entry about it.
+
+                THIS IS A BREAKING CHANGE AND IT IS SUPPOSED TO BE. A migration that fails at
+                construction is a migration somebody performs; one that succeeds silently is
+                one that happens to them.
+        """
+        if not isinstance(route, str) or route.strip() == "":
+            raise RouteNotChosenError()
         self._url = url.rstrip("/")
+        self._route = route
         self._token = token
         self._owns_client = client is None
         self._client = client or httpx.Client(timeout=timeout)
@@ -214,9 +275,18 @@ class Gateway:
             )
 
         try:
-            resp = self._client.post(self._url + "/v1/mcp", json=body, headers=headers)
+            resp = self._client.post(self._url + self._route, json=body, headers=headers)
         except httpx.HTTPError as e:
             raise exceptions.GatewayError(f"transport error: {e!s}", code=0, data=None) from e
+
+        if resp.status_code == 404:
+            # S4-WP-22. A 404 ON THE CHOSEN ROUTE IS A CONFIGURATION FACT, NOT A DENIAL.
+            #
+            # The generic branch below reports it as a GatewayError like any other non-2xx, and
+            # an operator reading "gateway returned HTTP 404" beside a run of blocked calls has
+            # every reason to think the gateway is refusing them. "The route is wrong" and "the
+            # policy said no" are different facts and only one is fixed by editing config.
+            raise RouteNotFoundError(self._route, resp.text[:500] if resp.text else None)
 
         if resp.status_code // 100 != 2:
             raise exceptions.GatewayError(

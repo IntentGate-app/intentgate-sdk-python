@@ -20,10 +20,31 @@ from intentgate.capability import (
     decode_token,
 )
 from intentgate.client import (
+    ROUTE_MCP_GOVERNED,
+    ROUTE_MCP_LEGACY,
     ContentBlock,
     Gateway,
     IntentGateMetadata,
+    RouteNotChosenError,
+    RouteNotFoundError,
     ToolCallResult,
+)
+
+# S4-WP-22. The value-returning decision contract (ODR-R1-018), alongside the exception
+# hierarchy rather than replacing it: an obtained answer is a VALUE, and an exception is
+# reserved for the state in which no answer exists.
+from intentgate.decision import (
+    ANSWER_REFUSALS,
+    ASSERTION_CLASSES,
+    AUTHORITY_KINDS,
+    CANONICAL_ANSWER_VERSION,
+    NEGOTIATION_HEADER,
+    VERDICTS,
+    BatchDecision,
+    Decision,
+    NotPermittedError,
+    UnavailableError,
+    validate_answer,
 )
 from intentgate.exceptions import (
     BudgetError,
@@ -42,6 +63,22 @@ from intentgate.memory import (
 )
 
 __all__ = [
+    # S4-WP-22 — the decision contract.
+    "ANSWER_REFUSALS",
+    "ASSERTION_CLASSES",
+    "AUTHORITY_KINDS",
+    "BatchDecision",
+    "CANONICAL_ANSWER_VERSION",
+    "Decision",
+    "NEGOTIATION_HEADER",
+    "NotPermittedError",
+    "UnavailableError",
+    "VERDICTS",
+    "validate_answer",
+    "ROUTE_MCP_GOVERNED",
+    "ROUTE_MCP_LEGACY",
+    "RouteNotChosenError",
+    "RouteNotFoundError",
     "Gateway",
     "ToolCallResult",
     "ContentBlock",

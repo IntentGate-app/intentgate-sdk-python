@@ -1,0 +1,569 @@
+{
+  "artifact": "intentgate-iga1-conformance-corpus",
+  "contract_version": "IGA/1",
+  "note": "Emitted by gateway/internal/answer. The platform repository carries these bytes verbatim and replays them through its TypeScript mirror. ODR-R1-052.",
+  "cases": [
+    {
+      "name": "valid_permit_unbounded",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "PERMIT",
+        "reason": {
+          "code": "GRANT_MATCHED"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "GRANT_WINDOW"
+        },
+        "decision_id": "DEC-1",
+        "lineage": {
+          "grant_id": "IG-1"
+        }
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "valid_permit_bounded",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "PERMIT",
+        "reason": {
+          "code": "GRANT_MATCHED"
+        },
+        "authority": {
+          "kind": "BOUNDED",
+          "bounds": [
+            {
+              "dimension": "amount",
+              "limit": "100"
+            }
+          ]
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "GRANT_WINDOW"
+        },
+        "decision_id": "DEC-2",
+        "lineage": {
+          "source_authority_id": "BA-1"
+        }
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "valid_permit_with_obligations",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "PERMIT",
+        "reason": {
+          "code": "GRANT_MATCHED"
+        },
+        "obligations": [
+          {
+            "type": "REDACT",
+            "params": {
+              "fields": [
+                "ssn"
+              ]
+            }
+          }
+        ],
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "GRANT_WINDOW"
+        },
+        "decision_id": "DEC-3",
+        "lineage": {
+          "grant_id": "IG-3"
+        }
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "valid_deny",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "NO_GRANT",
+          "detail": "no effective grant"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "EVALUATION"
+        },
+        "decision_id": "DEC-4",
+        "lineage": {}
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "valid_step_up",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "STEP_UP",
+        "reason": {
+          "code": "INSUFFICIENT_AUTHORITY"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "EVALUATION"
+        },
+        "decision_id": "DEC-5",
+        "lineage": {}
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "valid_indeterminate_with_absent",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "INDETERMINATE",
+        "reason": {
+          "code": "MISSING_INPUT"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "EVALUATION"
+        },
+        "decision_id": "DEC-6",
+        "lineage": {},
+        "absent": [
+          {
+            "name": "purpose",
+            "class": "REQUEST_FIELD",
+            "surface": "authorize"
+          }
+        ]
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "valid_indeterminate_without_absent",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "INDETERMINATE",
+        "reason": {
+          "code": "PDP_UNREACHABLE"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "EVALUATION"
+        },
+        "decision_id": "DEC-7",
+        "lineage": {}
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "valid_subject_and_resource_classed",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "NO_GRANT"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "EVALUATION"
+        },
+        "decision_id": "DEC-8",
+        "lineage": {},
+        "subject": {
+          "value": "EUID-1",
+          "class": "CALLER_ASSERTED"
+        },
+        "resource": {
+          "value": "EUID-2",
+          "class": "CALLER_ASSERTED"
+        }
+      },
+      "expect": "VALID"
+    },
+    {
+      "name": "unknown_contract_version",
+      "answer": {
+        "contract_version": "IGA/2",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-9",
+        "lineage": {}
+      },
+      "expect": "UNKNOWN_CONTRACT_VERSION"
+    },
+    {
+      "name": "unknown_verdict",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "ESCALATE",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-10",
+        "lineage": {}
+      },
+      "expect": "UNKNOWN_VERDICT"
+    },
+    {
+      "name": "verdict_restrict_is_not_a_verdict",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "RESTRICT",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-11",
+        "lineage": {}
+      },
+      "expect": "UNKNOWN_VERDICT"
+    },
+    {
+      "name": "missing_reason_code",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "   "
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-12",
+        "lineage": {}
+      },
+      "expect": "MISSING_REASON"
+    },
+    {
+      "name": "missing_decision_id",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "",
+        "lineage": {}
+      },
+      "expect": "MISSING_DECISION_ID"
+    },
+    {
+      "name": "bounded_with_no_bounds",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "BOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-13",
+        "lineage": {}
+      },
+      "expect": "BOUNDS_MISMATCH"
+    },
+    {
+      "name": "unbounded_carrying_bounds",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED",
+          "bounds": [
+            {
+              "dimension": "amount",
+              "limit": "1"
+            }
+          ]
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-14",
+        "lineage": {}
+      },
+      "expect": "BOUNDS_MISMATCH"
+    },
+    {
+      "name": "bound_without_dimension",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "BOUNDED",
+          "bounds": [
+            {
+              "dimension": "  ",
+              "limit": "1"
+            }
+          ]
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-15",
+        "lineage": {}
+      },
+      "expect": "BOUNDS_MISMATCH"
+    },
+    {
+      "name": "unknown_authority_kind",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "MAYBE"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-16",
+        "lineage": {}
+      },
+      "expect": "AUTHORITY_KIND"
+    },
+    {
+      "name": "missing_not_after",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_before": "2026-09-16T00:00:00Z",
+          "not_after": "",
+          "basis": "E"
+        },
+        "decision_id": "DEC-17",
+        "lineage": {}
+      },
+      "expect": "MISSING_VALIDITY"
+    },
+    {
+      "name": "missing_basis",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "  "
+        },
+        "decision_id": "DEC-18",
+        "lineage": {}
+      },
+      "expect": "MISSING_VALIDITY"
+    },
+    {
+      "name": "permit_without_lineage",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "PERMIT",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-19",
+        "lineage": {}
+      },
+      "expect": "PERMIT_WITHOUT_LINEAGE"
+    },
+    {
+      "name": "absence_on_a_denial",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-20",
+        "lineage": {},
+        "absent": [
+          {
+            "class": "REQUEST_FIELD",
+            "surface": "authorize"
+          }
+        ]
+      },
+      "expect": "ABSENCE_ON_A_DECISION"
+    },
+    {
+      "name": "absent_material_without_surface",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "INDETERMINATE",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-21",
+        "lineage": {},
+        "absent": [
+          {
+            "class": "REQUEST_FIELD",
+            "surface": "  "
+          }
+        ]
+      },
+      "expect": "ABSENT_MATERIAL_INCOMPLETE"
+    },
+    {
+      "name": "absent_material_leaks_an_evaluator_path",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "INDETERMINATE",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-22",
+        "lineage": {},
+        "absent": [
+          {
+            "name": "input.purpose",
+            "class": "REQUEST_FIELD",
+            "surface": "authorize"
+          }
+        ]
+      },
+      "expect": "ABSENT_MATERIAL_LEAK"
+    },
+    {
+      "name": "invented_assertion_class",
+      "answer": {
+        "contract_version": "IGA/1",
+        "verdict": "DENY",
+        "reason": {
+          "code": "X"
+        },
+        "authority": {
+          "kind": "UNBOUNDED"
+        },
+        "validity": {
+          "not_after": "2026-09-16T01:00:00Z",
+          "basis": "E"
+        },
+        "decision_id": "DEC-23",
+        "lineage": {},
+        "subject": {
+          "value": "EUID-1",
+          "class": "OBSERVED_IN_FLIGHT"
+        }
+      },
+      "expect": "ASSERTION_CLASS"
+    }
+  ]
+}

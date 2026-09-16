@@ -22,6 +22,7 @@ import pytest
 import respx
 
 from intentgate import (
+    ROUTE_MCP_LEGACY,
     BudgetError,
     CapabilityError,
     Gateway,
@@ -71,7 +72,7 @@ def test_tool_call_returns_parsed_result() -> None:
     route = respx.post(ENDPOINT).mock(
         return_value=httpx.Response(200, json=_allow(content_text="hello"))
     )
-    gw = Gateway(URL, token="t0k3n")
+    gw = Gateway(URL, token="t0k3n", route=ROUTE_MCP_LEGACY)
     res = gw.tool_call(
         "read_invoice", arguments={"id": "123"}, intent_prompt="Process today AP invoices"
     )
@@ -95,7 +96,7 @@ def test_request_shape_matches_mcp_spec() -> None:
 
     respx.post(ENDPOINT).mock(side_effect=_capture)
 
-    gw = Gateway(URL, token="abc")
+    gw = Gateway(URL, token="abc", route=ROUTE_MCP_LEGACY)
     gw.tool_call("read_invoice", arguments={"id": "1"}, intent_prompt="Process invoices")
 
     assert captured["body"]["jsonrpc"] == "2.0"
@@ -117,7 +118,7 @@ def test_request_id_defaults_to_sequential() -> None:
 
     respx.post(ENDPOINT).mock(side_effect=_capture)
 
-    gw = Gateway(URL)
+    gw = Gateway(URL, route=ROUTE_MCP_LEGACY)
     gw.tool_call("read_invoice")
     gw.tool_call("read_invoice")
     gw.tool_call("read_invoice")
@@ -135,7 +136,7 @@ def test_request_id_caller_override() -> None:
 
     respx.post(ENDPOINT).mock(side_effect=_capture)
 
-    gw = Gateway(URL)
+    gw = Gateway(URL, route=ROUTE_MCP_LEGACY)
     gw.tool_call("read_invoice", request_id="abc-123")
     gw.tool_call("read_invoice", request_id=42)
     assert seen == ["abc-123", 42]
@@ -151,7 +152,7 @@ def test_no_token_omits_authorization_header() -> None:
 
     respx.post(ENDPOINT).mock(side_effect=_capture)
 
-    Gateway(URL).tool_call("read_invoice")
+    Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
     assert "authorization" not in captured["headers"]
 
 
@@ -177,7 +178,7 @@ def test_each_stage_code_raises_matching_exception(code: int, exc_class: type) -
             json=_error(rid=1, code=code, message="check failed", data="reason details"),
         )
     )
-    gw = Gateway(URL, token="t")
+    gw = Gateway(URL, token="t", route=ROUTE_MCP_LEGACY)
     with pytest.raises(exc_class) as ei:
         gw.tool_call("read_invoice")
     assert ei.value.code == code
@@ -197,7 +198,7 @@ def test_unknown_jsonrpc_code_maps_to_protocol_error() -> None:
         )
     )
     with pytest.raises(ProtocolError) as ei:
-        Gateway(URL).tool_call("read_invoice")
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
     assert ei.value.code == -32601
 
 
@@ -210,7 +211,7 @@ def test_unknown_jsonrpc_code_maps_to_protocol_error() -> None:
 def test_http_5xx_raises_gateway_error() -> None:
     respx.post(ENDPOINT).mock(return_value=httpx.Response(503, text="upstream down"))
     with pytest.raises(GatewayError) as ei:
-        Gateway(URL).tool_call("read_invoice")
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
     assert "503" in str(ei.value)
 
 
@@ -218,14 +219,14 @@ def test_http_5xx_raises_gateway_error() -> None:
 def test_non_json_body_raises_gateway_error() -> None:
     respx.post(ENDPOINT).mock(return_value=httpx.Response(200, text="not json at all"))
     with pytest.raises(GatewayError):
-        Gateway(URL).tool_call("read_invoice")
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
 
 
 @respx.mock
 def test_network_error_raises_gateway_error() -> None:
     respx.post(ENDPOINT).mock(side_effect=httpx.ConnectError("refused"))
     with pytest.raises(GatewayError) as ei:
-        Gateway(URL).tool_call("read_invoice")
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
     assert "transport" in str(ei.value).lower() or "refused" in str(ei.value).lower()
 
 
@@ -236,7 +237,7 @@ def test_network_error_raises_gateway_error() -> None:
 
 def test_empty_tool_rejected_client_side() -> None:
     with pytest.raises(ValueError, match="tool is required"):
-        Gateway(URL).tool_call("")
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("")
 
 
 # ---------------------------------------------------------------------
@@ -247,7 +248,7 @@ def test_empty_tool_rejected_client_side() -> None:
 @respx.mock
 def test_context_manager_closes_owned_client() -> None:
     respx.post(ENDPOINT).mock(return_value=httpx.Response(200, json=_allow()))
-    with Gateway(URL) as gw:
+    with Gateway(URL, route=ROUTE_MCP_LEGACY) as gw:
         gw.tool_call("read_invoice")
     # No assertion needed — the context manager exiting without error
     # is what we're verifying. Closing twice (close called by __exit__,
@@ -258,7 +259,7 @@ def test_context_manager_closes_owned_client() -> None:
 def test_passed_in_client_not_closed_by_sdk() -> None:
     respx.post(ENDPOINT).mock(return_value=httpx.Response(200, json=_allow()))
     client = httpx.Client()
-    gw = Gateway(URL, client=client)
+    gw = Gateway(URL, client=client, route=ROUTE_MCP_LEGACY)
     gw.tool_call("read_invoice")
     gw.close()
     # The injected client is still usable — SDK does not own it.

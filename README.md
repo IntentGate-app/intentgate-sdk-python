@@ -27,9 +27,13 @@ gateway error responses into typed Python exceptions.
 ## Three lines of agent code
 
 ```python
-from intentgate import Gateway
+from intentgate import Gateway, ROUTE_MCP_GOVERNED
 
-gw = Gateway(url="http://localhost:8080", token=os.environ["INTENTGATE_TOKEN"])
+# `route` is required and has no default (ODR-R1-018): /v1/mcp/ig is governed solely by the
+# BA-/IG- chain, /v1/mcp runs the legacy capability/bundle pipeline. They are different
+# authorities and the SDK will not choose for you.
+gw = Gateway(url="http://localhost:8080", token=os.environ["INTENTGATE_TOKEN"],
+             route=ROUTE_MCP_GOVERNED)
 result = gw.tool_call(
     "read_invoice",
     arguments={"id": "123"},
@@ -73,7 +77,7 @@ gateway check fired:
 | `IntentGateError`  | (base)        | Catch this if you don't care which check fired.                                   |
 
 ```python
-from intentgate import Gateway, PolicyError, BudgetError, IntentGateError
+from intentgate import Gateway, ROUTE_MCP_GOVERNED, PolicyError, BudgetError, IntentGateError
 
 try:
     result = gw.tool_call("transfer_funds", arguments={"amount_eur": 50_000})
@@ -88,7 +92,7 @@ except IntentGateError as e:
 
 ## API reference
 
-### `Gateway(url, token=None, *, timeout=10.0, client=None)`
+### `Gateway(url, token=None, *, route, timeout=10.0, client=None)`
 
 Construct a client.
 
@@ -100,7 +104,7 @@ Construct a client.
 `Gateway` is also a context manager:
 
 ```python
-with Gateway(url="...", token="...") as gw:
+with Gateway(url="...", token="...", route=ROUTE_MCP_GOVERNED) as gw:
     gw.tool_call(...)
 # client closed automatically
 ```
@@ -126,11 +130,11 @@ The pitch's "three lines" referred to the SDK setup. In practice an
 agent wraps each tool through the gateway:
 
 ```python
-from intentgate import Gateway
+from intentgate import Gateway, ROUTE_MCP_GOVERNED
 
 class FinanceAgent:
     def __init__(self, gateway_url: str, token: str, prompt: str) -> None:
-        self.gw = Gateway(url=gateway_url, token=token)
+        self.gw = Gateway(url=gateway_url, token=token, route=ROUTE_MCP_GOVERNED)
         self.prompt = prompt
 
     def read_invoice(self, invoice_id: str) -> str:
