@@ -22,6 +22,8 @@ import pytest
 import respx
 
 from intentgate import (
+    CANONICAL_ANSWER_VERSION,
+    NEGOTIATION_HEADER,
     ROUTE_MCP_LEGACY,
     BudgetError,
     CapabilityError,
@@ -31,6 +33,7 @@ from intentgate import (
     IntentGateError,
     PolicyError,
     ProtocolError,
+    UnavailableError,
 )
 
 URL = "http://gateway.test"
@@ -265,3 +268,80 @@ def test_passed_in_client_not_closed_by_sdk() -> None:
     # The injected client is still usable — SDK does not own it.
     assert not client.is_closed
     client.close()
+
+
+# ---------------------------------------------------------------------
+# S4-WP-22 · negotiation and the UNAVAILABLE outcome
+#
+# Two frozen rulings, and until 2026-09-20 neither was wired:
+#
+#   ODR-R1-053  "An unhonoured IGA/1 negotiation produces an EXPLICIT fallback, never a
+#               silent one."
+#   ODR-R1-018  "NO ROUTE DEFAULT. UNAVAILABLE remains an OUTCOME, never another durable
+#               verdict."
+#
+# NEGOTIATION_HEADER was defined and exported by both SDKs and sent by neither, and
+# UnavailableError was exported and raised nowhere while GatewayError carried its exact
+# documented meaning. The machinery existed; nothing reached it.
+# ---------------------------------------------------------------------
+
+
+@respx.mock
+def test_every_call_asks_for_the_contract() -> None:
+    """N1: the negotiation header is SENT, on every call, with the version this SDK speaks."""
+    route = respx.post(ENDPOINT).mock(
+        return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {}})
+    )
+    Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
+    sent = route.calls[0].request.headers
+    assert sent[NEGOTIATION_HEADER] == CANONICAL_ANSWER_VERSION
+
+
+@respx.mock
+def test_the_header_is_not_the_only_thing_sent() -> None:
+    """N1b NON-VACUITY: the header assertion above is not passing over an empty header map."""
+    route = respx.post(ENDPOINT).mock(
+        return_value=httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {}})
+    )
+    Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
+    sent = route.calls[0].request.headers
+    assert sent["Content-Type"] == "application/json"
+
+
+@respx.mock
+def test_transport_failure_is_unavailable_not_a_denial() -> None:
+    """N2: the gateway could not be asked, so no answer exists — an OUTCOME, per ODR-R1-018."""
+    respx.post(ENDPOINT).mock(side_effect=httpx.ConnectError("refused"))
+    with pytest.raises(UnavailableError):
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
+
+
+@respx.mock
+def test_unreadable_answer_is_unavailable() -> None:
+    """N3: the other half of the same outcome — it answered something unreadable."""
+    respx.post(ENDPOINT).mock(return_value=httpx.Response(200, text="not json at all"))
+    with pytest.raises(UnavailableError):
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
+
+
+@respx.mock
+def test_an_answered_error_is_not_unavailable() -> None:
+    """N4: the distinction the ruling exists to preserve.
+
+    A 503 is the gateway ANSWERING with a failure. That is not "no answer exists", and
+    collapsing the two would lose exactly what UNAVAILABLE-as-an-outcome is for.
+    """
+    respx.post(ENDPOINT).mock(return_value=httpx.Response(503, text="upstream down"))
+    with pytest.raises(GatewayError) as ei:
+        Gateway(URL, route=ROUTE_MCP_LEGACY).tool_call("read_invoice")
+    assert not isinstance(ei.value, UnavailableError)
+
+
+def test_unavailable_is_still_a_gateway_error() -> None:
+    """N5 COMPATIBILITY: a caller catching the older name still catches the ruled outcome.
+
+    This is what let the outcome be raised at all without a breaking change — and it is
+    asserted rather than assumed, because the whole benefit disappears if the hierarchy is
+    ever flattened.
+    """
+    assert issubclass(UnavailableError, GatewayError)

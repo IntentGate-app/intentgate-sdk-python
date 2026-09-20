@@ -38,7 +38,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-from intentgate.exceptions import IntentGateError
+from intentgate.exceptions import GatewayError, IntentGateError
 
 #: The contract this SDK speaks. Matches ``answer.CanonicalAnswerVersion`` in the gateway.
 CANONICAL_ANSWER_VERSION = "IGA/1"
@@ -151,10 +151,25 @@ class NotPermittedError(IntentGateError):
         self.decision = decision
 
 
-class UnavailableError(IntentGateError):
+class UnavailableError(GatewayError):
     """Raised when the gateway could not be asked, or answered something unreadable.
 
     An OUTCOME, not a verdict. It says nothing about the authority, only about the exchange.
+
+        [FROZEN] ODR-R1-018: "NO ROUTE DEFAULT. UNAVAILABLE remains an OUTCOME, never another
+        durable verdict."
+
+    ## WHY IT SUBCLASSES ``GatewayError`` RATHER THAN SITTING BESIDE IT
+
+    Measured 2026-09-20: this class was exported and raised NOWHERE, while ``GatewayError`` was
+    documented as "Network / transport error reaching the gateway, or an HTTP response that
+    isn't well-formed JSON-RPC" — word for word the meaning above. Two classes for one outcome,
+    and the raise went to the one the ruling does not name.
+
+    Making this a SUBCLASS is what lets the ruled outcome be raised without breaking a caller
+    that catches the older name. ``except GatewayError`` still catches an unavailable exchange;
+    ``except UnavailableError`` now distinguishes "no answer exists" from "the gateway answered
+    and the answer was an error", which is the distinction ODR-R1-018 exists to preserve.
     """
 
 

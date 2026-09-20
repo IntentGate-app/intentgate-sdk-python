@@ -19,7 +19,7 @@ from typing import Any
 
 import httpx
 
-from intentgate import exceptions
+from intentgate import decision, exceptions
 
 # JSON-RPC method we currently use. The MCP spec defines others
 # (tools/list, initialize, ping); the gateway proxies those in a later
@@ -255,7 +255,21 @@ class Gateway:
                 "arguments": arguments or {},
             },
         }
-        headers = {"Content-Type": "application/json"}
+        headers = {
+            "Content-Type": "application/json",
+            # S4-WP-22 AC-1. ASK FOR THE CONTRACT, ALWAYS.
+            #
+            #     [FROZEN] ODR-R1-053: "An unhonoured IGA/1 negotiation produces an EXPLICIT
+            #     fallback, never a silent one."
+            #
+            # Measured 2026-09-20: this header was DEFINED and EXPORTED by both SDKs and sent by
+            # neither, and `answer.Negotiate` in the gateway has no callers outside its own tests.
+            # So today every negotiation is unhonoured — and that is precisely the case the ruling
+            # is about. Sending it is what makes the fallback observable: a server that ignores it
+            # yields a decision carrying `contract_negotiated=False` and a stated reason, instead
+            # of a legacy answer nobody can tell apart from an honoured one.
+            decision.NEGOTIATION_HEADER: decision.CANONICAL_ANSWER_VERSION,
+        }
         if self._token:
             headers["Authorization"] = f"Bearer {self._token}"
         if intent_prompt:
@@ -277,7 +291,11 @@ class Gateway:
         try:
             resp = self._client.post(self._url + self._route, json=body, headers=headers)
         except httpx.HTTPError as e:
-            raise exceptions.GatewayError(f"transport error: {e!s}", code=0, data=None) from e
+            # ODR-R1-018: UNAVAILABLE is an OUTCOME. The gateway could not be asked, so no answer
+            # exists — which is a different fact from an answer that denied, and the caller may
+            # need to act on it differently. UnavailableError subclasses GatewayError, so code
+            # catching the older name is unaffected.
+            raise decision.UnavailableError(f"transport error: {e!s}", code=0, data=None) from e
 
         if resp.status_code == 404:
             # S4-WP-22. A 404 ON THE CHOSEN ROUTE IS A CONFIGURATION FACT, NOT A DENIAL.
@@ -298,7 +316,9 @@ class Gateway:
         try:
             payload = resp.json()
         except ValueError as e:
-            raise exceptions.GatewayError(f"non-JSON response: {e!s}", code=0) from e
+            # The other half of the same outcome: the gateway answered something unreadable, so
+            # again no answer exists. Its own docstring names both cases.
+            raise decision.UnavailableError(f"non-JSON response: {e!s}", code=0) from e
 
         return _parse_response(payload)
 
