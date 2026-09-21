@@ -32,8 +32,9 @@ from intentgate import Gateway, ROUTE_MCP_GOVERNED
 # `route` is required and has no default (ODR-R1-018): /v1/mcp/ig is governed solely by the
 # BA-/IG- chain, /v1/mcp runs the legacy capability/bundle pipeline. They are different
 # authorities and the SDK will not choose for you.
-gw = Gateway(url="http://localhost:8080", token=os.environ["INTENTGATE_TOKEN"],
-             route=ROUTE_MCP_GOVERNED)
+gw = Gateway(
+    url="http://localhost:8080", token=os.environ["INTENTGATE_TOKEN"], route=ROUTE_MCP_GOVERNED
+)
 result = gw.tool_call(
     "read_invoice",
     arguments={"id": "123"},
@@ -131,6 +132,7 @@ agent wraps each tool through the gateway:
 
 ```python
 from intentgate import Gateway, ROUTE_MCP_GOVERNED
+
 
 class FinanceAgent:
     def __init__(self, gateway_url: str, token: str, prompt: str) -> None:
