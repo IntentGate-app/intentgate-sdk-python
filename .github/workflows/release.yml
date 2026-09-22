@@ -18,6 +18,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # EST-F-163 · OWNER RULING E = GATE, 2026-09-22.
+  #
+  # THIS REPOSITORY WAS THE WORSE OF THE TWO. Its release ran `python -m build` and
+  # `twine check --strict` and then PUBLISHED -- no ruff, no pytest, on no Python version.
+  # A tag was the entire gate. sdk-typescript at least ran its tests on Node 20.
+  #
+  # The suite is CALLED, not copied, so the gate cannot drift from the suite it names:
+  # ruff check, ruff format --check, and pytest on 3.10, 3.11, 3.12 and 3.13.
+  suite:
+    name: CI suite (the gate)
+    uses: ./.github/workflows/ci.yml
+
   build:
     name: Build sdist + wheel
     runs-on: ubuntu-latest
@@ -51,7 +63,7 @@ jobs:
 
   publish-pypi:
     name: Publish to PyPI (trusted publishing)
-    needs: build
+    needs: [build, suite]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # PyPI trusted publishing requires:

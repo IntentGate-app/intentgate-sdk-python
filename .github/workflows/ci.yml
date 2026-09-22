@@ -6,12 +6,18 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # EST-F-163, owner ruling E = GATE (2026-09-22). Called by `release.yml`; see the note there.
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  # `github.workflow` is in the key so a release's CALL to this workflow does not share a
+  # cancellable group with an ordinary push to main. Without it, someone pushing while a tag
+  # is being released cancels the very suite the release is gated on, and the release then
+  # fails for a reason that looks like flakiness.
+  group: ${{ github.workflow }}-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
