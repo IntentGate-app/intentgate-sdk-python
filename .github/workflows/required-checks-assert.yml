@@ -1,0 +1,96 @@
+# THE SUITE MUST BIND, NOT ONLY RUN — EST-F-143 A, owner ruling F = ENABLE (2026-09-22).
+#
+# PORTED FROM intentgate-lab, WHICH PORTED IT FROM console-pro. Not rewritten: that repository
+# settled the design under [FROZEN] ODR-R1-033 D3 = B and paid for three defects getting there —
+# a GITHUB_TOKEN that structurally cannot make this read, triggers that could not fire from a
+# non-default branch (EST-F-026), and a bare backtick that deleted the word `administration`
+# from its own refusal message (EST-F-045). Re-deriving any of that here would be the
+# rediscovery this estate has filed more than any other defect.
+#
+# This repository's release ran NO tests at all before EST-F-163-S1, and its CI went red on main without stopping anything (EST-F-161). Both halves are now closed: the release calls the suite, and the suite gates the branch.
+#
+# ITS POLARITY IS KEPT VERBATIM: without the credential this job FAILS with CONTROL INVALID.
+# An assertion that cannot be made is not a pass. Until the owner acts this workflow is RED BY
+# DESIGN, and a visible failure is strictly better than the silence that preceded it.
+#
+# THE ONE DECLARED EXTENSION: REQUIRED_CONTEXTS is a LIST, where the lab's is a single string.
+# This suite is a matrix, and requiring one leg of it would leave the others running and gating
+# nothing — which is the exact condition EST-F-143 A is about, reproduced one level down.
+#
+# TWO OWNER ACTS MAKE IT GREEN, and neither is engineering's:
+#   1  mint a fine-grained PAT scoped to this repository with Administration: Read-only and
+#      nothing else, stored as the repository secret REQUIRED_CHECKS_TOKEN
+#   2  configure every context below as a required status check on the protected branch
+name: required checks assertion
+
+on:
+  push:
+    branches: ['**']
+  schedule:
+    - cron: "35 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: required-checks-assertion
+  cancel-in-progress: false
+
+jobs:
+  assert:
+    name: the CI suite is a REQUIRED check on main
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read the required status checks on main
+        env:
+          # GITHUB_TOKEN CANNOT DO THIS, and pretending otherwise is how a control becomes
+          # decorative. Branch protection is an administration read, and `administration` is
+          # not a grantable scope for the default token.
+          GH_TOKEN: ${{ secrets.REQUIRED_CHECKS_TOKEN }}
+          REQUIRED_CONTEXTS: |
+            ruff
+            pytest (3.10)
+            pytest (3.11)
+            pytest (3.12)
+            pytest (3.13)
+            build sdist + wheel
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "CONTROL INVALID — secrets.REQUIRED_CHECKS_TOKEN is not configured."
+            echo "Branch protection cannot be read with the default GITHUB_TOKEN: it is an"
+            echo "administration read, and \`administration\` is not a grantable scope for it."
+            echo "This is NOT a pass. The requirement is unverified, which is a failure."
+            exit 1
+          fi
+
+          if ! gh api "repos/${GITHUB_REPOSITORY}/branches/main/protection/required_status_checks" \
+                 > /tmp/required.json 2>/tmp/required.err; then
+            echo "CONTROL INVALID — could not read branch protection on main."
+            echo "This is NOT a pass. The assertion is unproven, which is a failure."
+            sed -n 1,5p /tmp/required.err
+            exit 1
+          fi
+
+          echo "required contexts on main:"
+          jq -r '.contexts[]? // .checks[]?.context // empty' /tmp/required.json | sed 's/^/  /'
+
+          missing=0
+          while IFS= read -r c; do
+            [ -z "$c" ] && continue
+            if jq -e --arg c "$c" '[(.contexts[]? , (.checks[]?.context))] | index($c)' /tmp/required.json >/dev/null; then
+              echo "OK   — '$c' is required on main."
+            else
+              echo "FAIL — '$c' is NOT required on main."
+              missing=$((missing+1))
+            fi
+          done <<< "$REQUIRED_CONTEXTS"
+
+          if [ "$missing" -gt 0 ]; then
+            echo ""
+            echo "$missing context(s) run on every push and gate nothing. EST-F-143 A."
+            exit 1
+          fi
+          echo "every declared context gates main."
